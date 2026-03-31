@@ -1,0 +1,282 @@
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+}
+
+header {
+    background: #e3350d;
+    color: white;
+    padding: 20px;
+    position: relative;
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 15px;
+    font-weight: bold;
+    background: #222;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+nav a:hover {
+    background: #444;
+}
+
+nav span {
+    font-weight: bold;
+    background: #222;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.layout {
+    display: flex;
+}
+
+.sidebar {
+    width: 200px;
+    padding: 15px;
+    height: 100px;
+}
+
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar li {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.sidebar li:hover {
+    background: #ddd;
+}
+
+#type-list {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+}
+
+.type {
+    list-style: none;
+    padding: 6px 8px;
+    font-size: 14px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.type:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.type.all { background: #777; }
+.type.fire { background: #F08030; }
+.type.water { background: #6890F0; }
+.type.grass { background: #78C850; }
+.type.electric { background: #F8D030; color: black; }
+.type.psychic { background: #F85888; }
+.type.ice { background: #98D8D8; color: black; }
+.type.dragon { background: #7038F8; }
+.type.dark { background: #705848; }
+.type.fairy { background: #EE99AC; color: black; }
+
+main {
+    flex: 1;
+    padding: 20px;
+}
+
+form {
+    margin-bottom: 10px;
+}
+
+input, textarea {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: 250px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    background: #e3350d;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #c42d0b;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+li {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+li:hover {
+    transform: translateY(-5px);
+}
+
+li img {
+    display: block;
+    margin: 0 auto 10px;
+}
+
+li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+img {
+    display: block;
+    margin: 10px auto;
+}
+
+section {
+    max-width: 600px;
+    margin: 30px auto;
+    text-align: center;
+}
+
+.comment {
+    background: white;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    text-align: left;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.comment form {
+    display: inline;
+}
+
+.comment button {
+    margin-top: 5px;
+    margin-right: 5px;
+    background: #444;
+}
+
+.comment button:hover {
+    background: #222;
+}
+
+textarea {
+    width: 100%;
+    max-width: 500px;
+}
+
+.pokemon-card {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.pokemon-card img {
+    width: 100px;
+    height: 100px;
+}
+
+.stat {
+    text-align: left;
+    margin: 10px 0;
+}
+
+.stat-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-bar {
+    background: #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.stat-fill {
+    height: 15px;
+    background: #4caf50;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.type {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 8px;
+    color: white;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.type-fire { background: #f08030; }
+.type-water { background: #6890f0; }
+.type-grass { background: #78c850; }
+.type-electric { background: #f8d030; color: black; }
+.type-normal { background: #a8a878; }
+
+.comments-container {
+    max-width: 600px;
+    margin: 40px auto;
+}
+
+.pokemon-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.pokemon-link:hover {
+    opacity: 0.8;
+}
+
+#pokemon-container {
+    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 10px;
+}
+
+.pokemon-card:hover {
+    transform: scale(1.05);
+    transition: 0.2s;
+}
