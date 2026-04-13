@@ -1,8 +1,65 @@
-
 body {
-    margin: 0;
     font-family: Arial, sans-serif;
-    background: #f5f5f5;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 0;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 80px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.auth-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.auth-container input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.auth-container button {
+    width: 100%;
+    padding: 10px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.auth-container button:hover {
+    background: #34495e;
+}
+
+.auth-container a {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    text-decoration: none;
+    color: #2c3e50;
+}
+
+.auth-container a:hover {
+    text-decoration: underline;
+}
+
+.error {
+    color: red;
+    text-align: center;
+    margin-bottom: 10px;
 }
 
 header {
@@ -27,7 +84,7 @@ nav a {
     text-decoration: none;
     margin-left: 15px;
     font-weight: bold;
-    background: #222;
+    background: #000000;
     padding: 8px 12px;
     border-radius: 6px;
     transition: 0.2s;
@@ -39,7 +96,7 @@ nav a:hover {
 
 nav span {
     font-weight: bold;
-    background: #222;
+    background: #000000;
     padding: 8px 12px;
     border-radius: 6px;
 }
@@ -49,9 +106,10 @@ nav span {
 }
 
 .sidebar {
-    width: 200px;
+    width: 300px;
     padding: 15px;
     height: 100px;
+    margin-right: 100px;
 }
 
 
@@ -79,7 +137,7 @@ nav span {
 
 .type {
     list-style: none;
-    padding: 6px 8px;
+    padding: 6px 6px;
     font-size: 14px;
     border-radius: 6px;
     text-align: center;
@@ -100,6 +158,9 @@ nav span {
 .type.dragon { background: #7038F8; }
 .type.dark { background: #705848; }
 .type.fairy { background: #EE99AC; color: black; }
+.type.steel { background: #848484; color: black; }
+.type.normal { background: #a8a878; }
+.type.bug { background: #9fd900; }
 
 main {
     flex: 1;
@@ -190,11 +251,11 @@ section {
 .comment button {
     margin-top: 5px;
     margin-right: 5px;
-    background: #444;
+    background: #000000;
 }
 
 .comment button:hover {
-    background: #222;
+    background: #333;
 }
 
 textarea {
@@ -248,11 +309,18 @@ textarea {
     font-size: 14px;
 }
 
-.type-fire { background: #f08030; }
-.type-water { background: #6890f0; }
-.type-grass { background: #78c850; }
-.type-electric { background: #f8d030; color: black; }
+.type-fire { background: #F08030; }
+.type-water { background: #6890F0; }
+.type-grass { background: #78C850; }
+.type-electric { background: #F8D030; color: black; }
+.type-psychic { background: #F85888; }
+.type-ice { background: #98D8D8; color: black; }
+.type-dragon { background: #7038F8; }
+.type-dark { background: #705848; }
+.type-fairy { background: #EE99AC; color: black; }
+.type-steel { background: #848484; color: black; }
 .type-normal { background: #a8a878; }
+.type-bug { background: #9fd900; }
 
 .comments-container {
     max-width: 600px;
@@ -276,7 +344,15 @@ textarea {
     padding: 10px;
 }
 
-.pokemon-card:hover {
-    transform: scale(1.05);
-    transition: 0.2s;
+.admin-link {
+    margin-top: 15px;
+    margin-right: 450px;
+    background: #000000;
+    color: white;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+.admin-link:hover {
+    background: #333;
 }

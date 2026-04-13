@@ -16,6 +16,10 @@ $pokemonList = $data['results'];
 <header>
     <h1>Poké Fans Pokémon Encyclopedia</h1>
         <nav>
+         <?php if (isset($_SESSION['user']) && $_SESSION['user']['role'] === 'admin'): ?>
+        <a href="admin.php" class="admin-link">Admin Panel</a>
+        </a>
+        <?php endif; ?>
         <?php if (isset($_SESSION['user'])): ?>
             <span>Welcome <?= htmlspecialchars($_SESSION['user']['username']) ?></span>
             <a href="logout.php">Logout</a>
@@ -48,6 +52,9 @@ $pokemonList = $data['results'];
                     <li class="type dragon" onclick="filterByType('dragon')">Dragon</li>
                     <li class="type dark" onclick="filterByType('dark')">Dark</li>
                     <li class="type fairy" onclick="filterByType('fairy')">Fairy</li>
+                    <li class="type steel" onclick="filterByType('steel')">Steel</li>
+                    <li class="type normal" onclick="filterByType('normal')">Normal</li>
+                    <li class="type bug" onclick="filterByType('bug')">Bug</li>
                 </ul>
         </aside>
     </div>

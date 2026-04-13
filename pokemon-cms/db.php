@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 try {
     $pdo = new PDO("mysql:host=localhost;dbname=pokemon_cms", "root", "");
