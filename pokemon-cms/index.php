@@ -1,4 +1,5 @@
 <?php
+session_start();
 require 'db.php';
 $json = file_get_contents("https://pokeapi.co/api/v2/pokemon?limit=151");
 $data = json_decode($json, true);

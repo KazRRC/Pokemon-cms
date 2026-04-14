@@ -1,24 +1,30 @@
 document.addEventListener("DOMContentLoaded", () => {
-
+    const apiPokemonNames = new Set();
     const container = document.getElementById("pokemon-container");
     const searchInput = document.getElementById("search");
 
-    function loadAllPokemon() {
-        if (!container) {
-            console.error("pokemon-container not found!");
-            return;
-        }
+    apiPokemonNames.clear();
 
+    function loadAllPokemon() {
         container.innerHTML = "";
+        apiPokemonNames.clear();
 
         fetch("https://pokeapi.co/api/v2/pokemon?limit=50")
             .then(res => res.json())
             .then(data => {
                 data.results.forEach(pokemon => {
-                    displayPokemon(pokemon.name);
+                    displayAPIPokemon(pokemon.name);
                 });
             });
-    }
+
+        fetch("search_db.php?q=")
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(pokemon => {
+                    displayDBPokemon(pokemon);
+                });
+            });
+        }
 
     function filterByType(type) {
         container.innerHTML = "";
@@ -27,12 +33,13 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(res => res.json())
             .then(data => {
                 data.pokemon.slice(0, 50).forEach(p => {
-                    displayPokemon(p.pokemon.name);
+                    displayAPIPokemon(p.pokemon.name);
                 });
             });
     }
 
-    function displayPokemon(name) {
+    function displayAPIPokemon(name) {
+        apiPokemonNames.add(name);
         fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
             .then(res => res.json())
             .then(data => {
@@ -53,12 +60,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 container.appendChild(card);
             });
     }
+    function displayDBPokemon(pokemon) {
+
+        if (apiPokemonNames.has(pokemon.name.toLowerCase())) {
+            return;
+        }
+
+        const card = document.createElement("div");
+        card.classList.add("pokemon-card");
+
+        card.innerHTML = `
+            <h3>${pokemon.name}</h3>
+            ${pokemon.image ? `<img src="uploads/${pokemon.image}" />` : ""}
+        `;
+
+        card.style.cursor = "pointer";
+
+        card.addEventListener("click", () => {
+            window.location.href = `pokemon.php?name=${pokemon.name}`;
+        });
+
+        container.appendChild(card);
+    }
 
     window.loadAllPokemon = loadAllPokemon;
     window.filterByType = filterByType;
 
     loadAllPokemon();
-
     if (searchInput) {
         searchInput.addEventListener("input", () => {
             const query = searchInput.value.toLowerCase().trim();
@@ -69,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             container.innerHTML = "";
-
             fetch("https://pokeapi.co/api/v2/pokemon?limit=1025")
                 .then(res => res.json())
                 .then(data => {
@@ -78,11 +105,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     );
 
                     filtered.forEach(pokemon => {
-                        displayPokemon(pokemon.name);
+                        displayAPIPokemon(pokemon.name);
                     });
 
                     if (filtered.length === 0) {
-                        container.innerHTML = "<p>No Pokémon found.</p>";
+                    }
+                });
+
+            fetch(`search_db.php?q=${query}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        data.forEach(pokemon => {
+                            displayDBPokemon(pokemon);
+                        });
+                    } else {
+                        setTimeout(() => {
+                            if (container.innerHTML === "") {
+                                container.innerHTML = "<p>No Pokémon found.</p>";
+                            }
+                        }, 300);
                     }
                 });
         });

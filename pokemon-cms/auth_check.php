@@ -16,7 +16,7 @@ if(!isset($_SESSION['user'])){
 
 if($_POST){
     $stmt=$pdo->prepare("SELECT * FROM users WHERE username=?");
-    $stmt->execute([$_POST['username']]);
+
     $user=$stmt->fetch();
 
     if($user && password_verify($_POST['password'],$user['password_hash'])){
@@ -25,8 +25,3 @@ if($_POST){
     }
 }
 ?>
-<form method="POST">
-<input name="username">
-<input name="password" type="password">
-<button>Login</button>
-</form>

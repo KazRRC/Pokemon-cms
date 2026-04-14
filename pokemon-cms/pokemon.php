@@ -1,6 +1,6 @@
 <?php
+session_start();
 require 'db.php';
-
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -10,11 +10,14 @@ if (isset($_GET['id'])) {
     $stmt = $pdo->prepare("
         SELECT p.*, t.type_name 
         FROM pokemon p
-        JOIN types t ON p.type_id = t.type_id
-        WHERE p.pokemon_id = ?
+        LEFT JOIN types t ON p.type_id = t.type_id
+        WHERE LOWER(p.name) = LOWER(?)
     ");
     $stmt->execute([$_GET['id']]);
     $pokemon = $stmt->fetch();
+    if (!$pokemon) {
+        $pokemon = null;
+}
 
 } elseif (isset($_GET['name'])) {
     $stmt = $pdo->prepare("
@@ -25,7 +28,10 @@ if (isset($_GET['id'])) {
     ");
     $stmt->execute([$_GET['name']]);
     $pokemon = $stmt->fetch();
-}
+    if (!$pokemon) {
+        $pokemon = null;
+    }
+    }
 
 if (!$pokemon && isset($_GET['name'])) {
 
@@ -34,34 +40,15 @@ if (!$pokemon && isset($_GET['name'])) {
 
     if ($json) {
         $data = json_decode($json, true);
-        $type = $data['types'][0]['type']['name'];
-        $stmt = $pdo->prepare("SELECT type_id FROM types WHERE type_name = ?");
-        $stmt->execute([$type]);
-        $typeRow = $stmt->fetch();
-
-        if (!$typeRow) {
-            $pdo->prepare("INSERT INTO types (type_name) VALUES (?)")->execute([$type]);
-            $type_id = $pdo->lastInsertId();
-        } else {
-            $type_id = $typeRow['type_id'];
-        }
-
-            $stmt = $pdo->prepare("
-                INSERT INTO pokemon (name, type_id, hitpoints, attack, defense, image, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, NOW())
-            ");
-
-            $stmt->execute([
-                ucfirst($data['name']),
-                $type_id,
-                $data['stats'][0]['base_stat'],
-                $data['stats'][1]['base_stat'],
-                $data['stats'][2]['base_stat'],
-                $data['sprites']['front_default']
-            ]);
-
-        header("Location: pokemon.php?name=" . urlencode($data['name']));
-        exit;
+        $pokemon = [
+            'name' => ucfirst($data['name']),
+            'type_name' => $data['types'][0]['type']['name'],
+            'hitpoints' => $data['stats'][0]['base_stat'],
+            'attack' => $data['stats'][1]['base_stat'],
+            'defense' => $data['stats'][2]['base_stat'],
+            'image' => $data['sprites']['front_default'],
+            'pokemon_id' => null 
+        ];
     }
 }
 ?>
@@ -69,7 +56,7 @@ if (!$pokemon && isset($_GET['name'])) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title><?= htmlspecialchars($pokemon['name']) ?></title>
+    <title><?= htmlspecialchars($pokemon['name'] ?? 'Pokemon') ?></title>
     <link rel="stylesheet" href="style.css">
 </head>
 <header>
@@ -83,12 +70,16 @@ if (!$pokemon && isset($_GET['name'])) {
 <body>
     <main>
 <div class="pokemon-card">
-    <h1><?= htmlspecialchars($pokemon['name']) ?></h1>
-    <?php if (!empty($pokemon['image'])): ?>
-        <img src="<?= htmlspecialchars($pokemon['image']) ?>" width="150">
-    <?php endif; ?>
+    <h1><?= htmlspecialchars($pokemon['name'] ?? '') ?></h1>
+<?php if (!empty($pokemon['image'])): ?>
+    <img src="<?= 
+        (strpos($pokemon['image'], 'http') === 0) 
+        ? $pokemon['image'] 
+        : 'uploads/' . $pokemon['image'] 
+    ?>" style="max-width:300px;">
+<?php endif; ?>
     <div class="type type-<?= strtolower($pokemon['type_name']) ?>">
-        <?= htmlspecialchars($pokemon['type_name']) ?>
+        <?= htmlspecialchars($pokemon['type_name'] ?? 'Unknown') ?>
     </div>
     <div class="stat">
         <div class="stat-label">HP</div>
@@ -114,7 +105,7 @@ if (!$pokemon && isset($_GET['name'])) {
         <h2>Comments</h2>
 
         <?php
-        if ($pokemon['pokemon_id']) {
+        if (!empty($pokemon) && !empty($pokemon['pokemon_id'])) {
             $stmt = $pdo->prepare("
                 SELECT c.*, u.username 
                 FROM comments c
@@ -175,10 +166,10 @@ if (!$pokemon && isset($_GET['name'])) {
         <hr>
         <h3>Add Comment</h3>
 
-        <?php if (isset($_SESSION['user']) && $pokemon['pokemon_id']): ?>
+        <?php if (isset($_SESSION['user'])): ?>
             <form action="comment.php" method="POST">
                 <input type="hidden" name="action" value="add">
-                <input type="hidden" name="pokemon_id" value="<?= $pokemon['pokemon_id'] ?>">
+                <input type="hidden" name="pokemon_id" value="<?= $pokemon['pokemon_id'] ?? '' ?>">
                 <input type="hidden" name="pokemon_name" value="<?= $pokemon['name'] ?>">
                 <textarea name="comment" required></textarea><br>
                 <button type="submit">Post Comment</button>
