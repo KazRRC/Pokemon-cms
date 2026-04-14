@@ -72,6 +72,14 @@ if (!$pokemon && isset($_GET['name'])) {
     <title><?= htmlspecialchars($pokemon['name']) ?></title>
     <link rel="stylesheet" href="style.css">
 </head>
+<header>
+    <a href="index.php" class="home-button">⬅ Back to Home</a>
+
+    <form action="pokemon.php" method="GET" style="display:inline;">
+        <input type="text" name="name" placeholder="Search Pokémon..." required>
+        <button type="submit">Search</button>
+    </form>
+</header>
 <body>
     <main>
 <div class="pokemon-card">

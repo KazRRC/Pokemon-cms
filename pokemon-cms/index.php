@@ -32,10 +32,9 @@ $pokemonList = $data['results'];
 <main>
 <section>
     <h2>Search Pokémon</h2>
-    <form action="pokemon.php" method="GET">
-        <input type="text" name="name" placeholder="Enter Pokémon name..." required>
+        <input type="text" id="search" name="name" placeholder="Enter Pokémon name...">
         <button type="submit">Search</button>
-    </form>
+        <div id="search-results"></div>
 </section>
 <section>
     <div class="layout">

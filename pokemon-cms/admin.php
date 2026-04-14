@@ -59,7 +59,11 @@ if (isset($_GET['edit_user'])) {
     $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
     $stmt->execute([$_GET['edit_user']]);
     $editUser = $stmt->fetch();
+if ($editUser['role'] === 'admin') {
+    die("You cannot modify another admin.");
 }
+}
+
 
 if (isset($_POST['update_user'])) {
     $sql = "UPDATE users SET username=?, role=?";
@@ -77,6 +81,7 @@ if (isset($_POST['update_user'])) {
 }
 ?>
 
+<a href="index.php" class="home-button">⬅ Back to Home</a>
 <h1>Admin Dashboard</h1>
 <h2>Manage Pokémon</h2>
 
@@ -126,12 +131,13 @@ if (isset($_POST['update_user'])) {
 <?php foreach ($pdo->query("SELECT * FROM users") as $u): ?>
     <div>
         <?= htmlspecialchars($u['username']) ?> (<?= $u['role'] ?>)
-
-        <a href="?edit_user=<?= $u['user_id'] ?>">Edit</a>
-
+            <?php if ($u['role'] !== 'admin'): ?>
+            <a href="?edit_user=<?= $u['user_id'] ?>">Edit</a>
+            <?php else: ?>
+                <span>PROTECTED</span>
+            <?php endif; ?>
         <form method="POST" style="display:inline;">
             <input type="hidden" name="user_id" value="<?= $u['user_id'] ?>">
-            <button name="delete_user">Delete</button>
         </form>
     </div>
 <?php endforeach; ?>

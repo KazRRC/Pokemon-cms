@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     const container = document.getElementById("pokemon-container");
+    const searchInput = document.getElementById("search");
 
     function loadAllPokemon() {
         if (!container) {
@@ -57,4 +58,33 @@ document.addEventListener("DOMContentLoaded", () => {
     window.filterByType = filterByType;
 
     loadAllPokemon();
+
+    if (searchInput) {
+        searchInput.addEventListener("input", () => {
+            const query = searchInput.value.toLowerCase().trim();
+
+            if (query === "") {
+                loadAllPokemon();
+                return;
+            }
+
+            container.innerHTML = "";
+
+            fetch("https://pokeapi.co/api/v2/pokemon?limit=1025")
+                .then(res => res.json())
+                .then(data => {
+                    const filtered = data.results.filter(pokemon =>
+                        pokemon.name.startsWith(query)
+                    );
+
+                    filtered.forEach(pokemon => {
+                        displayPokemon(pokemon.name);
+                    });
+
+                    if (filtered.length === 0) {
+                        container.innerHTML = "<p>No Pokémon found.</p>";
+                    }
+                });
+        });
+    }
 });

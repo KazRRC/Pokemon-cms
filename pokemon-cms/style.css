@@ -181,7 +181,7 @@ input, textarea {
 button {
     padding: 10px 15px;
     border: none;
-    background: #e3350d;
+    background: #05b817;
     color: white;
     border-radius: 6px;
     cursor: pointer;
@@ -342,6 +342,20 @@ textarea {
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     padding: 10px;
+}
+
+.home-button {
+    display: inline-block;
+    margin: 10px;
+    padding: 8px 12px;
+    background-color: #05b817;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #ddd;
+}
+
+.home-button:hover {
+    background-color: #ddd;
 }
 
 .admin-link {

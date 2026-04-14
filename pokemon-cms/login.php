@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <a href="index.php" class="home-button">⬅ Back to Home</a>
 <div class="auth-container">
 <h2>Login</h2>
 <?php if ($error): ?>
