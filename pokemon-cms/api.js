@@ -2,8 +2,76 @@ document.addEventListener("DOMContentLoaded", () => {
     const apiPokemonNames = new Set();
     const container = document.getElementById("pokemon-container");
     const searchInput = document.getElementById("search");
-
+    const categorySelect = document.getElementById("category");
+    const RESULTS_PER_PAGE = 10;
+    let currentPage = 1;
+    let currentResults = [];
     apiPokemonNames.clear();
+
+    function renderPage() {
+    container.innerHTML = "";
+
+    const start = (currentPage - 1) * RESULTS_PER_PAGE;
+    const end = start + RESULTS_PER_PAGE;
+
+    const pageResults = currentResults.slice(start, end);
+
+    pageResults.forEach(item => {
+        if (item.type === "api") {
+            displayAPIPokemon(item.data);
+        } else {
+            displayDBPokemon(item.data);
+        }
+    });
+
+    renderPagination();
+}
+
+function renderPagination() {
+    const totalPages = Math.ceil(currentResults.length / RESULTS_PER_PAGE);
+    if (totalPages <= 1) return;
+
+    const pagination = document.createElement("div");
+    pagination.classList.add("pagination");
+
+    if (currentPage > 1) {
+        const prev = document.createElement("button");
+        prev.textContent = "Previous";
+        prev.onclick = () => {
+            currentPage--;
+            renderPage();
+        };
+        pagination.appendChild(prev);
+    }
+
+    for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+
+        if (i === currentPage) {
+            btn.disabled = true;
+        }
+
+        btn.onclick = () => {
+            currentPage = i;
+            renderPage();
+        };
+
+        pagination.appendChild(btn);
+    }
+
+    if (currentPage < totalPages) {
+        const next = document.createElement("button");
+        next.textContent = "Next";
+        next.onclick = () => {
+            currentPage++;
+            renderPage();
+        };
+        pagination.appendChild(next);
+    }
+
+    container.appendChild(pagination);
+}
 
     function loadAllPokemon() {
         container.innerHTML = "";
@@ -87,46 +155,42 @@ document.addEventListener("DOMContentLoaded", () => {
     window.filterByType = filterByType;
 
     loadAllPokemon();
-    if (searchInput) {
-        searchInput.addEventListener("input", () => {
-            const query = searchInput.value.toLowerCase().trim();
+function performSearch() {
+    const query = searchInput.value.toLowerCase().trim();
+    const category = categorySelect.value;
 
-            if (query === "") {
-                loadAllPokemon();
-                return;
-            }
-
-            container.innerHTML = "";
-            fetch("https://pokeapi.co/api/v2/pokemon?limit=1025")
-                .then(res => res.json())
-                .then(data => {
-                    const filtered = data.results.filter(pokemon =>
-                        pokemon.name.startsWith(query)
-                    );
-
-                    filtered.forEach(pokemon => {
-                        displayAPIPokemon(pokemon.name);
-                    });
-
-                    if (filtered.length === 0) {
-                    }
-                });
-
-            fetch(`search_db.php?q=${query}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.length > 0) {
-                        data.forEach(pokemon => {
-                            displayDBPokemon(pokemon);
-                        });
-                    } else {
-                        setTimeout(() => {
-                            if (container.innerHTML === "") {
-                                container.innerHTML = "<p>No Pokémon found.</p>";
-                            }
-                        }, 300);
-                    }
-                });
-        });
+    if (query === "") {
+        loadAllPokemon();
+        return;
     }
+
+    container.innerHTML = "";
+
+    Promise.all([
+        fetch("https://pokeapi.co/api/v2/pokemon?limit=1025")
+            .then(res => res.json()),
+        fetch(`search_db.php?q=${query}&category=${category}`)
+            .then(res => res.json())
+    ]).then(([apiData, dbData]) => {
+
+        let apiFiltered = apiData.results.filter(pokemon =>
+            pokemon.name.startsWith(query)
+        );
+
+        if (category !== "all") {
+            apiFiltered = apiFiltered.filter(p => p.name.includes(category));
+        }
+
+        currentResults = [
+            ...apiFiltered.map(p => ({ type: "api", data: p.name })),
+            ...dbData.map(p => ({ type: "db", data: p }))
+        ];
+
+        currentPage = 1;
+        renderPage();
+    });
+}
+
+searchInput.addEventListener("input", performSearch);
+categorySelect.addEventListener("change", performSearch);
 });
