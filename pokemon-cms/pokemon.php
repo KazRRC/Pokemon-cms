@@ -167,11 +167,23 @@ if (!$pokemon && isset($_GET['name'])) {
         <h3>Add Comment</h3>
 
         <?php if (isset($_SESSION['user'])): ?>
+            <?php if (!empty($_SESSION['captcha_error'])): ?>
+                <p style="color:red;">
+                    <?= $_SESSION['captcha_error'] ?>
+                </p>
+                <?php unset($_SESSION['captcha_error']); ?>
+            <?php endif; ?>
             <form action="comment.php" method="POST">
+                <img src="captcha.php?rand=<?= time() ?>" alt="CAPTCHA">
+                <br>
+
+                <input type="text" name="captcha" placeholder="Enter CAPTCHA" required>
+
+                <br>
                 <input type="hidden" name="action" value="add">
                 <input type="hidden" name="pokemon_id" value="<?= $pokemon['pokemon_id'] ?? '' ?>">
                 <input type="hidden" name="pokemon_name" value="<?= $pokemon['name'] ?>">
-                <textarea name="comment" required></textarea><br>
+                <textarea name="comment" required><?= $_SESSION['old_comment'] ?? '' ?></textarea>
                 <button type="submit">Post Comment</button>
             </form>
         <?php else: ?>

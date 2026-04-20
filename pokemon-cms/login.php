@@ -43,7 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php if (!isset($_SESSION['user'])): ?>
 <form method="POST">
     <input type="text" name="username" placeholder="Username" required><br>
-    <input name="email" type="email" placeholder="email" required><br>
     <input type="password" name="password" placeholder="Password" required><br>
     <button type="submit">Login</button>
 </form>

@@ -16,7 +16,6 @@ if(!isset($_SESSION['user'])){
 
 if($_POST){
     $stmt=$pdo->prepare("SELECT * FROM users WHERE username=?");
-
     $user=$stmt->fetch();
 
     if($user && password_verify($_POST['password'],$user['password_hash'])){

@@ -11,6 +11,18 @@ $action = $_POST['action'] ?? '';
 $user_id = $_SESSION['user']['user_id'];
 
 try {
+    $enteredCaptcha = $_POST['captcha'] ?? '';
+    $realCaptcha = $_SESSION['captcha'] ?? '';
+
+    $_SESSION['old_comment'] = $_POST['comment'];
+
+    if (strtolower($enteredCaptcha) !== strtolower($realCaptcha)) {
+        $_SESSION['captcha_error'] = "Incorrect CAPTCHA. Please try again.";
+
+        header("Location: pokemon.php?name=" . urlencode($_POST['pokemon_name']));
+        exit;
+    }
+
 if ($action === 'add') {
 
     $pokemon_id = $_POST['pokemon_id'];
@@ -68,6 +80,8 @@ if ($action === 'add') {
     header("Location: pokemon.php?id=" . $pokemon_id);
     exit;
 }
+
+unset($_SESSION['old_comment']);
 
     if ($action === 'edit') {
 
