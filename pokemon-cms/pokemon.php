@@ -106,7 +106,7 @@ $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <input type="text" name="captcha" placeholder="Enter captcha" required>
                 </div>
                 <input type="hidden" name="pokemon_name" value="<?= htmlspecialchars($name) ?>">
-                <button type="submit">Post Comment</button>
+                <button class="post-button" type="submit">Post Comment</button>
             </form>
         <?php endif; ?>
     </div>

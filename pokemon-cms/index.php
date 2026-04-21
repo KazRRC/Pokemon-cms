@@ -78,10 +78,6 @@ $customPokemon = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="card">
             <a href="pokemon.php?id=<?= $p['pokemon_id'] ?>" style="text-decoration:none; color:black;">
                 <strong><?= htmlspecialchars($p['name']) ?></strong>
-                <p>HP: <?= $p['hitpoints'] ?? '-' ?></p>
-                <p>Attack: <?= $p['attack'] ?? '-' ?></p>
-                <p>Defense: <?= $p['defense'] ?? '-' ?></p>
-                <p>Type: <?= htmlspecialchars($p['type'] ?? '-') ?></p>
                 <?php if (!empty($p['image']) && file_exists("uploads/" . $p['image'])): ?>
                     <img src="uploads/<?= htmlspecialchars($p['image']) ?>">
                 <?php endif; ?>
@@ -105,6 +101,9 @@ searchInput.addEventListener("input", function() {
     window.history.replaceState({}, "", "?" + params.toString());
 
 });
+</script>
+<script>
+const selectedType = "<?= $type ?>";
 </script>
 </body>
 </html>

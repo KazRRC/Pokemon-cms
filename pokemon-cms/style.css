@@ -234,6 +234,14 @@ button:hover {
     width: 200px;
 }
 
+.post-button {
+    margin-top:55px;
+    width: 120px;
+    height: 40px;
+    font-size: 10px;
+    text-align: center;
+}
+
 #pagination {
     text-align: center;
     margin-top: 20px;
