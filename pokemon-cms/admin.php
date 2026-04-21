@@ -13,25 +13,50 @@ if (isset($_POST['add_pokemon'])) {
     $attack = $_POST['attack'] ?? null;
     $defense = $_POST['defense'] ?? null;
     $type = $_POST['type'] ?? null;
+    $description = $_POST['description'] ?? null;
+    $ability = $_POST['ability'] ?? null;
 
     $imageName = null;
 
     if (!empty($_FILES['image']['name'])) {
         $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
         $imageName = time() . "_" . uniqid() . "." . $ext;
-        $targetPath = "uploads/" . $imageName;
-
-        move_uploaded_file($_FILES['image']['tmp_name'], $targetPath);
+        move_uploaded_file($_FILES['image']['tmp_name'], "uploads/" . $imageName);
     }
 
     if ($name !== "") {
         $stmt = $pdo->prepare("
-            INSERT INTO pokemon (name, hitpoints, attack, defense, type, image, is_custom)
-            VALUES (?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO pokemon 
+            (name, hitpoints, attack, defense, type, image, description, ability, is_custom)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
         ");
 
-        $stmt->execute([$name, $hitpoints, $attack, $defense, $type, $imageName]);
+        $stmt->execute([
+            $name, $hitpoints, $attack, $defense,
+            $type, $imageName, $description, $ability
+        ]);
     }
+}
+
+if (isset($_POST['update_pokemon'])) {
+
+    $id = $_POST['pokemon_id'];
+    $name = trim($_POST['name']);
+    $hitpoints = $_POST['hitpoints'] ?? null;
+    $attack = $_POST['attack'] ?? null;
+    $defense = $_POST['defense'] ?? null;
+    $type = $_POST['type'] ?? null;
+    $description = $_POST['description'] ?? null;
+    $ability = $_POST['ability'] ?? null;
+
+    $pdo->prepare("
+        UPDATE pokemon 
+        SET name=?, hitpoints=?, attack=?, defense=?, type=?, description=?, ability=?
+        WHERE pokemon_id=?
+    ")->execute([
+        $name, $hitpoints, $attack, $defense,
+        $type, $description, $ability, $id
+    ]);
 }
 
 if (isset($_POST['update_image'])) {
@@ -74,7 +99,7 @@ if (isset($_POST['delete_pokemon'])) {
 
 $customPokemon = $pdo->query("
     SELECT * FROM pokemon 
-    WHERE is_custom = 1 
+    WHERE is_custom = 1 OR is_custom IS NULL
     ORDER BY name ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -93,7 +118,7 @@ if (isset($_POST['delete_user'])) {
 if (isset($_POST['edit_user'])) {
     $id = $_POST['user_id'];
     $username = trim($_POST['username']);
-
+    // sanitizes whitespace
     $pdo->prepare("UPDATE users SET username=? WHERE user_id=?")
         ->execute([$username, $id]);
 }
@@ -132,13 +157,13 @@ $comments = $pdo->query("
 <h1>Admin Panel</h1>
 <a href="index.php" class="home-button">⬅ Back</a>
 <div class="section">
-<h2>Add Custom Pokémon</h2>
+<h2>Add Pokémon</h2>
 <form method="POST" enctype="multipart/form-data">
     <input name="name" placeholder="Name" required><br>
-    <input type="number" name="hp" placeholder="HP"><br>
+    <input type="number" name="hitpoints" placeholder="HP"><br>
     <input type="number" name="attack" placeholder="Attack"><br>
-    <input type="number" name="defense" placeholder="Defense"><br>
-
+    <input type="number" name="defense" placeholder="Defense"><br> <!-- constrainted to enforce correct datatypes-->
+    <textarea name="description" placeholder="Description"></textarea><br>
     <select name="type">
         <option value="">Select Type</option>
         <option value="fire">Fire</option>
@@ -149,50 +174,60 @@ $comments = $pdo->query("
         <option value="psychic">Psychic</option>
         <option value="dragon">Dragon</option>
     </select><br><br>
-
     <input type="file" name="image" accept="image/*"><br><br>
-
     <button name="add_pokemon">Add Pokémon</button>
 </form>
-
 <h2>Custom Pokémon</h2>
 
 <?php foreach ($customPokemon as $p): ?>
 <div class="card">
 
-    <strong><?= htmlspecialchars($p['name'] ?? '') ?></strong><br>
+<form method="POST" enctype="multipart/form-data">
 
-    <p>HP: <?= $p['hitpoints'] ?? '-' ?></p>
-    <p>Attack: <?= $p['attack'] ?? '-' ?></p>
-    <p>Defense: <?= $p['defense'] ?? '-' ?></p>
-    <p>Type: <?= htmlspecialchars($p['type'] ?? '-') ?></p>
+    <input type="hidden" name="pokemon_id" value="<?= $p['pokemon_id'] ?>">
 
-    <?php 
-    $imgPath = (!empty($p['image']) && file_exists("uploads/" . $p['image']))
-        ? "uploads/" . htmlspecialchars($p['image'])
-        : null;
-    ?>
+    <input name="name" value="<?= htmlspecialchars($p['name']) ?>" required><br>
 
-    <?php if ($imgPath): ?>
-        <img src="<?= $imgPath ?>">
+    <input type="number" name="hitpoints" value="<?= $p['hitpoints'] ?>" placeholder="HP"><br>
+    <input type="number" name="attack" value="<?= $p['attack'] ?>" placeholder="Attack"><br>
+    <input type="number" name="defense" value="<?= $p['defense'] ?>" placeholder="Defense"><br>
+
+    <input type="text" name="ability" value="<?= htmlspecialchars($p['ability'] ?? '') ?>" placeholder="Ability"><br>
+
+    <textarea name="description"><?= htmlspecialchars($p['description'] ?? '') ?></textarea><br>
+
+    <select name="type">
+        <option value="">Select Type</option>
+        <option value="fire" <?= $p['type']=="fire"?'selected':'' ?>>Fire</option>
+        <option value="water" <?= $p['type']=="water"?'selected':'' ?>>Water</option>
+        <option value="grass" <?= $p['type']=="grass"?'selected':'' ?>>Grass</option>
+        <option value="electric" <?= $p['type']=="electric"?'selected':'' ?>>Electric</option>
+        <option value="normal" <?= $p['type']=="normal"?'selected':'' ?>>Normal</option>
+        <option value="psychic" <?= $p['type']=="psychic"?'selected':'' ?>>Psychic</option>
+        <option value="dragon" <?= $p['type']=="dragon"?'selected':'' ?>>Dragon</option>
+    </select><br><br>
+
+    <?php if (!empty($p['image']) && file_exists("uploads/" . $p['image'])): ?>
+        <img src="uploads/<?= htmlspecialchars($p['image']) ?>">
     <?php else: ?>
         <p>No image</p>
     <?php endif; ?>
-    <form method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="pokemon_id" value="<?= htmlspecialchars($p['pokemon_id'] ?? '') ?>">
-        <input type="file" name="image" accept="image/*">
-        <button name="update_image">Update Image</button>
-    </form>
-    <form method="POST">
-        <input type="hidden" name="pokemon_id" value="<?= htmlspecialchars($p['pokemon_id'] ?? '') ?>">
-        <button name="delete_pokemon" onclick="return confirm('Delete this Pokémon?')">
-            Delete
-        </button>
-    </form>
+
+    <input type="file" name="image"><br><br>
+
+    <button name="update_pokemon">Save Changes</button>
+
+</form>
+
+<form method="POST">
+    <input type="hidden" name="pokemon_id" value="<?= $p['pokemon_id'] ?>">
+    <button name="delete_pokemon" onclick="return confirm('Delete this Pokémon?')">
+        Delete
+    </button>
+</form>
 
 </div>
 <?php endforeach; ?>
-
 </div>
 </div>
 <div class="section">
@@ -201,6 +236,7 @@ $comments = $pdo->query("
 <?php foreach ($users as $u): ?>
     <div class="card">
         <strong><?= htmlspecialchars($u['username']) ?></strong> (<?= $u['role'] ?>)<br>
+        <!--sanitized with htmlspecialchars to prevent script injection-->
         <form method="POST" style="display:inline;">
             <input type="hidden" name="user_id" value="<?= $u['user_id'] ?>">
             <input name="username" value="<?= htmlspecialchars($u['username']) ?>">
