@@ -6,66 +6,114 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
     die("Access denied");
 }
 
-if (isset($_POST['save_page'])) {
-    $title = $_POST['title'];
-    $content = $_POST['content'];
-    $categories = $_POST['categories'] ?? [];
+if (isset($_POST['add_pokemon'])) {
 
-    if (!empty($_POST['page_id'])) {
+    $name = trim($_POST['name']);
+    $hitpoints = $_POST['hitpoints'] ?? null;
+    $attack = $_POST['attack'] ?? null;
+    $defense = $_POST['defense'] ?? null;
+    $type = $_POST['type'] ?? null;
 
-        $pageId = $_POST['page_id'];
-        $stmt = $pdo->prepare("UPDATE pages SET title=?, content=? WHERE id=?");
-        $stmt->execute([$title, $content, $pageId]);
-        $pdo->prepare("DELETE FROM page_categories WHERE page_id=?")
-            ->execute([$pageId]);
+    $imageName = null;
 
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO pages (title, content) VALUES (?, ?)");
-        $stmt->execute([$title, $content]);
+    if (!empty($_FILES['image']['name'])) {
+        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $imageName = time() . "_" . uniqid() . "." . $ext;
+        $targetPath = "uploads/" . $imageName;
 
-        $pageId = $pdo->lastInsertId();
+        move_uploaded_file($_FILES['image']['tmp_name'], $targetPath);
     }
-
-    foreach ($categories as $catId) {
-        $pdo->prepare("INSERT INTO page_categories (page_id, category_id) VALUES (?, ?)")
-            ->execute([$pageId, $catId]);
-    }
-}
-
-if (isset($_POST['add_category'])) {
-    $name = trim($_POST['category_name']);
 
     if ($name !== "") {
-        $pdo->prepare("INSERT INTO categories (name) VALUES (?)")
-            ->execute([$name]);
+        $stmt = $pdo->prepare("
+            INSERT INTO pokemon (name, hitpoints, attack, defense, type, image, is_custom)
+            VALUES (?, ?, ?, ?, ?, ?, 1)
+        ");
+
+        $stmt->execute([$name, $hitpoints, $attack, $defense, $type, $imageName]);
     }
 }
 
-if (isset($_GET['approve'])) {
-    $pdo->prepare("UPDATE comments SET approved=1 WHERE id=?")
-        ->execute([$_GET['approve']]);
+if (isset($_POST['update_image'])) {
+
+    $id = $_POST['pokemon_id'];
+
+    if (!empty($_FILES['image']['name'])) {
+
+        $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+        $imageName = time() . "_" . uniqid() . "." . $ext;
+        $targetPath = "uploads/" . $imageName;
+
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
+            $old = $pdo->prepare("SELECT image FROM pokemon WHERE pokemon_id=?");
+            $old->execute([$id]);
+            $oldImg = $old->fetchColumn();
+
+            if ($oldImg && file_exists("uploads/" . $oldImg)) {
+                unlink("uploads/" . $oldImg);
+            }
+
+            $pdo->prepare("UPDATE pokemon SET image=? WHERE pokemon_id=?")
+                ->execute([$imageName, $id]);
+        }
+    }
 }
 
-if (isset($_GET['delete_comment'])) {
-    $pdo->prepare("DELETE FROM comments WHERE id=?")
-        ->execute([$_GET['delete_comment']]);
+if (isset($_POST['delete_pokemon'])) {
+    $id = $_POST['pokemon_id'];
+    $stmt = $pdo->prepare("SELECT image FROM pokemon WHERE pokemon_id=?");
+    $stmt->execute([$id]);
+    $img = $stmt->fetchColumn();
+
+    if ($img && file_exists("uploads/" . $img)) {
+        unlink("uploads/" . $img);
+    }
+
+    $pdo->prepare("DELETE FROM pokemon WHERE pokemon_id=?")->execute([$id]);
 }
 
-$pages = $pdo->query("SELECT * FROM pages ORDER BY created_at DESC")->fetchAll();
-$categories = $pdo->query("SELECT * FROM categories")->fetchAll();
-$comments = $pdo->query("SELECT * FROM comments WHERE approved=0")->fetchAll();
-$editPage = null;
-$editCategories = [];
+$customPokemon = $pdo->query("
+    SELECT * FROM pokemon 
+    WHERE is_custom = 1 
+    ORDER BY name ASC
+")->fetchAll(PDO::FETCH_ASSOC);
 
-if (isset($_GET['edit'])) {
-    $stmt = $pdo->prepare("SELECT * FROM pages WHERE id=?");
-    $stmt->execute([$_GET['edit']]);
-    $editPage = $stmt->fetch();
+if (isset($_POST['delete_user'])) {
+    $id = $_POST['user_id'];
 
-    $stmt = $pdo->prepare("SELECT category_id FROM page_categories WHERE page_id=?");
-    $stmt->execute([$_GET['edit']]);
-    $editCategories = array_column($stmt->fetchAll(), 'category_id');
+    $stmt = $pdo->prepare("SELECT role FROM users WHERE user_id=?");
+    $stmt->execute([$id]);
+    $user = $stmt->fetch();
+
+    if ($user && $user['role'] !== 'admin') {
+        $pdo->prepare("DELETE FROM users WHERE user_id=?")->execute([$id]);
+    }
 }
+
+if (isset($_POST['edit_user'])) {
+    $id = $_POST['user_id'];
+    $username = trim($_POST['username']);
+
+    $pdo->prepare("UPDATE users SET username=? WHERE user_id=?")
+        ->execute([$username, $id]);
+}
+
+if (isset($_POST['delete_comment'])) {
+    $id = $_POST['comment_id'];
+
+    $pdo->prepare("DELETE FROM comments WHERE comment_id=?")
+        ->execute([$id]);
+}
+
+$pokemon = $pdo->query("SELECT * FROM pokemon ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$users = $pdo->query("SELECT * FROM users ORDER BY user_id DESC")->fetchAll(PDO::FETCH_ASSOC);
+
+$comments = $pdo->query("
+    SELECT comments.*, users.username 
+    FROM comments
+    LEFT JOIN users ON comments.user_id = users.user_id
+    ORDER BY comments.created_at DESC
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -76,85 +124,138 @@ if (isset($_GET['edit'])) {
         body { font-family: Arial; }
         .section { margin-bottom: 40px; }
         .card { border:1px solid #ccc; padding:10px; margin:10px 0; }
+        img { max-width:100px; display:block; }
     </style>
 </head>
 <body>
+
 <h1>Admin Panel</h1>
+<a href="index.php" class="home-button">⬅ Back</a>
 <div class="section">
-<h2><?= $editPage ? "Edit Page" : "Create Page" ?></h2>
+<h2>Add Custom Pokémon</h2>
+<form method="POST" enctype="multipart/form-data">
+    <input name="name" placeholder="Name" required><br>
+    <input type="number" name="hp" placeholder="HP"><br>
+    <input type="number" name="attack" placeholder="Attack"><br>
+    <input type="number" name="defense" placeholder="Defense"><br>
 
-<form method="POST">
-    <input type="hidden" name="page_id" value="<?= $editPage['id'] ?? '' ?>">
+    <select name="type">
+        <option value="">Select Type</option>
+        <option value="fire">Fire</option>
+        <option value="water">Water</option>
+        <option value="grass">Grass</option>
+        <option value="electric">Electric</option>
+        <option value="normal">Normal</option>
+        <option value="psychic">Psychic</option>
+        <option value="dragon">Dragon</option>
+    </select><br><br>
 
-    <input name="title" placeholder="Title"
-        value="<?= htmlspecialchars($editPage['title'] ?? '') ?>" required>
+    <input type="file" name="image" accept="image/*"><br><br>
 
-    <textarea id="content" name="content">
-        <?= $editPage['content'] ?? '' ?>
-    </textarea>
-
-    <h4>Categories</h4>
-    <select name="categories[]" multiple>
-        <?php foreach ($categories as $cat): ?>
-            <option value="<?= $cat['id'] ?>"
-                <?= in_array($cat['id'], $editCategories) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($cat['name']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-
-    <br><br>
-    <button name="save_page">Save Page</button>
+    <button name="add_pokemon">Add Pokémon</button>
 </form>
+
+<h2>Custom Pokémon</h2>
+
+<?php foreach ($customPokemon as $p): ?>
+<div class="card">
+
+    <strong><?= htmlspecialchars($p['name'] ?? '') ?></strong><br>
+
+    <p>HP: <?= $p['hitpoints'] ?? '-' ?></p>
+    <p>Attack: <?= $p['attack'] ?? '-' ?></p>
+    <p>Defense: <?= $p['defense'] ?? '-' ?></p>
+    <p>Type: <?= htmlspecialchars($p['type'] ?? '-') ?></p>
+
+    <?php 
+    $imgPath = (!empty($p['image']) && file_exists("uploads/" . $p['image']))
+        ? "uploads/" . htmlspecialchars($p['image'])
+        : null;
+    ?>
+
+    <?php if ($imgPath): ?>
+        <img src="<?= $imgPath ?>">
+    <?php else: ?>
+        <p>No image</p>
+    <?php endif; ?>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="pokemon_id" value="<?= htmlspecialchars($p['pokemon_id'] ?? '') ?>">
+        <input type="file" name="image" accept="image/*">
+        <button name="update_image">Update Image</button>
+    </form>
+    <form method="POST">
+        <input type="hidden" name="pokemon_id" value="<?= htmlspecialchars($p['pokemon_id'] ?? '') ?>">
+        <button name="delete_pokemon" onclick="return confirm('Delete this Pokémon?')">
+            Delete
+        </button>
+    </form>
+
+</div>
+<?php endforeach; ?>
+
+</div>
 </div>
 <div class="section">
-<h2>All Pages</h2>
+<h2>Manage Users</h2>
 
-<?php foreach ($pages as $p): ?>
+<?php foreach ($users as $u): ?>
     <div class="card">
-        <strong><?= htmlspecialchars($p['title']) ?></strong><br>
-        <a href="?edit=<?= $p['id'] ?>">Edit</a>
+        <strong><?= htmlspecialchars($u['username']) ?></strong> (<?= $u['role'] ?>)<br>
+        <form method="POST" style="display:inline;">
+            <input type="hidden" name="user_id" value="<?= $u['user_id'] ?>">
+            <input name="username" value="<?= htmlspecialchars($u['username']) ?>">
+            <button name="edit_user">Save</button>
+        </form>
+        <?php if ($u['role'] !== 'admin'): ?>
+            <form method="POST" style="display:inline;">
+                <input type="hidden" name="user_id" value="<?= $u['user_id'] ?>">
+                <button name="delete_user" onclick="return confirm('Delete this user?')">Delete</button>
+            </form>
+        <?php endif; ?>
     </div>
 <?php endforeach; ?>
 </div>
 <div class="section">
-<h2>Manage Categories</h2>
-
-<form method="POST">
-    <input name="category_name" placeholder="New Category">
-    <button name="add_category">Add</button>
-</form>
-
-<ul>
-<?php foreach ($categories as $c): ?>
-    <li><?= htmlspecialchars($c['name']) ?></li>
-<?php endforeach; ?>
-</ul>
-</div>
-<div class="section">
-<h2>Pending Comments</h2>
-
-<?php if (empty($comments)): ?>
-    <p>No pending comments.</p>
-<?php endif; ?>
+<h2>All Comments</h2>
 
 <?php foreach ($comments as $c): ?>
     <div class="card">
-        <?= htmlspecialchars($c['content']) ?><br><br>
+        <strong><?= htmlspecialchars($c['username'] ?? 'User') ?></strong><br>
+        <?= htmlspecialchars($c['comment_text']) ?><br><br>
 
-        <a href="?approve=<?= $c['id'] ?>">Approve</a> |
-        <a href="?delete_comment=<?= $c['id'] ?>">Delete</a>
+        <form method="POST">
+            <input type="hidden" name="comment_id" value="<?= $c['comment_id'] ?>">
+            <button name="delete_comment" onclick="return confirm('Delete comment?')">Delete</button>
+        </form>
     </div>
 <?php endforeach; ?>
 </div>
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js"></script>
-<script>
-tinymce.init({
-    selector: '#content',
-    height: 300,
-    menubar: false
-});
-</script>
 
+<script src="https://cdn.tiny.cloud/1/jnn1k337zusgomp29w8oqrtuvjip37fc1aqy8pccd5qv4ydh/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+
+<script>
+  tinymce.init({
+    selector: 'textarea',
+    plugins: [
+      'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+      'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'tinymceai', 'uploadcare', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+    ],
+    toolbar: 'undo redo | tinymceai-chat tinymceai-quickactions tinymceai-review | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+    tinycomments_mode: 'embedded',
+    tinycomments_author: 'Author name',
+    mergetags_list: [
+      { value: 'First.Name', title: 'First Name' },
+      { value: 'Email', title: 'Email' },
+    ],
+    tinymceai_token_provider: async () => {
+      await fetch(`https://demo.api.tiny.cloud/1/jnn1k337zusgomp29w8oqrtuvjip37fc1aqy8pccd5qv4ydh/auth/random`, { method: "POST", credentials: "include" });
+      return { token: await fetch(`https://demo.api.tiny.cloud/1/jnn1k337zusgomp29w8oqrtuvjip37fc1aqy8pccd5qv4ydh/jwt/tinymceai`, { credentials: "include" }).then(r => r.text()) };
+    },
+    uploadcare_public_key: '4ef66d22160488668390',
+  });
+</script>
+<textarea>
+  Welcome to TinyMCE!
+</textarea>
 </body>
 </html>

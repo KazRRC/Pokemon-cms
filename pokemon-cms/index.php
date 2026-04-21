@@ -3,46 +3,21 @@ session_start();
 require 'db.php';
 
 $q = $_GET['q'] ?? '';
-$category = $_GET['category'] ?? 'all';
-$page = max(1, (int)($_GET['page'] ?? 1));
+$type = $_GET['type'] ?? 'all';
 
-$limit = 6;
-$offset = ($page - 1) * $limit;
-$categories = $pdo->query("SELECT * FROM categories")->fetchAll();
-$sql = "SELECT DISTINCT p.* FROM pages p
-        LEFT JOIN page_categories pc ON p.id = pc.page_id
-        LEFT JOIN categories c ON pc.category_id = c.id
-        WHERE p.title LIKE ?";
-
+$sql = "SELECT * FROM pokemon WHERE name LIKE ?";
 $params = ["%$q%"];
 
-if ($category !== "all") {
-    $sql .= " AND c.id = ?";
-    $params[] = $category;
+if ($type !== 'all') {
+    $sql .= " AND type = ?";
+    $params[] = $type;
 }
 
-$sql .= " LIMIT $limit OFFSET $offset";
+$sql .= " ORDER BY name ASC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-$pages = $stmt->fetchAll();
-$countSql = "SELECT COUNT(DISTINCT p.id) FROM pages p
-             LEFT JOIN page_categories pc ON p.id = pc.page_id
-             LEFT JOIN categories c ON pc.category_id = c.id
-             WHERE p.title LIKE ?";
-
-$countParams = ["%$q%"];
-
-if ($category !== "all") {
-    $countSql .= " AND c.id = ?";
-    $countParams[] = $category;
-}
-
-$countStmt = $pdo->prepare($countSql);
-$countStmt->execute($countParams);
-$total = $countStmt->fetchColumn();
-
-$totalPages = ceil($total / $limit);
+$customPokemon = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -52,7 +27,6 @@ $totalPages = ceil($total / $limit);
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <header>
     <h1>Poké Fans CMS</h1>
 
@@ -70,56 +44,67 @@ $totalPages = ceil($total / $limit);
         <?php endif; ?>
     </nav>
 </header>
-<main>
-
-<h2>Search Pages</h2>
-
+<main class="pokedex">
+    <div class="pokedex-header">
+        <h1>Pokédex</h1>
 <form method="GET">
-    <input type="text" name="q" value="<?= htmlspecialchars($q) ?>" placeholder="Search...">
-
-    <select name="category">
-        <option value="all">All Categories</option>
-        <?php foreach ($categories as $cat): ?>
-            <option value="<?= $cat['id'] ?>" <?= ($category == $cat['id']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($cat['name']) ?>
-            </option>
-        <?php endforeach; ?>
+    <input 
+        type="text" 
+        name="q" 
+        id="search"
+        placeholder="Search Pokémon..." 
+        value="<?= htmlspecialchars($q) ?>"
+    >
+        </div>
+    <select name="type">
+        <option value="all">All Types</option>
+        <option value="fire" <?= $type=="fire"?'selected':'' ?>>Fire</option>
+        <option value="water" <?= $type=="water"?'selected':'' ?>>Water</option>
+        <option value="grass" <?= $type=="grass"?'selected':'' ?>>Grass</option>
+        <option value="electric" <?= $type=="electric"?'selected':'' ?>>Electric</option>
+        <option value="normal" <?= $type=="normal"?'selected':'' ?>>Normal</option>
+        <option value="psychic" <?= $type=="psychic"?'selected':'' ?>>Psychic</option>
+        <option value="dragon" <?= $type=="dragon"?'selected':'' ?>>Dragon</option>
     </select>
 
     <button type="submit">Search</button>
 </form>
+<div id="pokemon-container"></div>
+<h2>Custom Pokémon</h2>
 
-<hr>
-<?php if (empty($pages)): ?>
-    <p>No results found.</p>
-<?php else: ?>
-    <?php foreach ($pages as $p): ?>
+<div class="pokemon-grid">
+<?php if (!empty($customPokemon)): ?>
+    <?php foreach ($customPokemon as $p): ?>
         <div class="card">
-            <h3><?= htmlspecialchars($p['title']) ?></h3>
-            <div><?= $p['content'] ?></div>
-            <a href="page.php?id=<?= $p['id'] ?>">View Page</a>
+            <a href="pokemon.php?id=<?= $p['pokemon_id'] ?>" style="text-decoration:none; color:black;">
+                <strong><?= htmlspecialchars($p['name']) ?></strong>
+                <p>HP: <?= $p['hitpoints'] ?? '-' ?></p>
+                <p>Attack: <?= $p['attack'] ?? '-' ?></p>
+                <p>Defense: <?= $p['defense'] ?? '-' ?></p>
+                <p>Type: <?= htmlspecialchars($p['type'] ?? '-') ?></p>
+                <?php if (!empty($p['image']) && file_exists("uploads/" . $p['image'])): ?>
+                    <img src="uploads/<?= htmlspecialchars($p['image']) ?>">
+                <?php endif; ?>
+
+            </a>
         </div>
     <?php endforeach; ?>
+<?php else: ?>
+    <p>No custom Pokémon found.</p>
 <?php endif; ?>
-<hr>
-<?php if ($totalPages > 1): ?>
-
-    <?php if ($page > 1): ?>
-        <a href="?q=<?= urlencode($q) ?>&category=<?= $category ?>&page=<?= $page-1 ?>">Prev</a>
-    <?php endif; ?>
-
-    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-        <a href="?q=<?= urlencode($q) ?>&category=<?= $category ?>&page=<?= $i ?>">
-            <?= $i ?>
-        </a>
-    <?php endfor; ?>
-
-    <?php if ($page < $totalPages): ?>
-        <a href="?q=<?= urlencode($q) ?>&category=<?= $category ?>&page=<?= $page+1 ?>">Next</a>
-    <?php endif; ?>
-
-<?php endif; ?>
-
+</div>
 </main>
+<script src="api.js"></script>
+<script>
+const searchInput = document.getElementById("search");
+
+searchInput.addEventListener("input", function() {
+    const query = this.value;
+    const params = new URLSearchParams(window.location.search);
+    params.set("q", query);
+    window.history.replaceState({}, "", "?" + params.toString());
+
+});
+</script>
 </body>
 </html>

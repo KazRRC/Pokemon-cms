@@ -1,8 +1,10 @@
 <?php
 require 'db.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+if (isset($_SESSION['username']) || isset($_SESSION['user_id'])) {
+    echo "LOGGED IN";
+} else {
+    echo "NOT LOGGED IN";
 }
 
 $error = "";
